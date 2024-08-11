@@ -6,7 +6,7 @@ from datetime import datetime, timezone
     # Fonction pour récupérer les données de qualité de l'air
 def first_extract():
             # Remplacez 'YOUR_API_KEY' par votre clé API réelle
-    API_KEY = '4c44d40971751c13cb17a24148065f15'
+    API_KEY = 'YOUR_API_KEY'
     BASE_URL = 'http://api.openweathermap.org/data/2.5/air_pollution/history'
 
     # Lire les fichiers CSV
