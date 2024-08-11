@@ -1,15 +1,13 @@
+
 import requests
 import pandas as pd
 from datetime import datetime, timezone
 
-
-    # Fonction pour récupérer les données de qualité de l'air
+# Fonction pour récupérer les données de qualité de l'air
 def first_extract():
-            # Remplacez 'YOUR_API_KEY' par votre clé API réelle
     API_KEY = 'YOUR_API_KEY'
     BASE_URL = 'http://api.openweathermap.org/data/2.5/air_pollution/history'
 
-    # Lire les fichiers CSV
     demographic_data = pd.read_csv('/home/voahary/airflow/dags/Demographic_Data.csv')
     geographic_data = pd.read_csv('/home/voahary/airflow/dags/Geographic_Data.csv')
 
@@ -28,7 +26,6 @@ def first_extract():
             print(f"Erreur de l'API pour les coordonnées ({lat}, {lon}): {response.status_code}")
             return None
 
-    # Fonction pour extraire les données de pollution
     def extract_pollution_data(api_data):
         try:
             pollution_entries = api_data['list']
@@ -53,7 +50,6 @@ def first_extract():
         except (KeyError, IndexError):
             return None
 
-        # Ajout des colonnes de latitude et longitude aux données démographiques
     latitude_longitude = {
         'Los Angeles': (34.0522, -118.2437),
         'Paris': (48.8566, 2.3522),
@@ -63,34 +59,27 @@ def first_extract():
         'Lima': (-12.0464, -77.0428)
     }
 
-    # Période pour laquelle récupérer les données (exemple: pour 2024-08-10)
-    start_timestamp = 1704076200  # Remplacez par le timestamp de début
-    end_timestamp = 1735606500    # Remplacez par le timestamp de fin
+    start_timestamp = 1704076200  # Timestamp de début
+    end_timestamp = 1735606500    # Timestamp de fin
 
-    # Collecte des données de pollution pour chaque ville
     pollution_data = []
 
     for index, row in demographic_data.iterrows():
         location = row['Location']
-        lat, lon = latitude_longitude[location]
-        api_data = get_air_quality_data(lat, lon, start_timestamp, end_timestamp)
-        if api_data:
-            pollution_entries = extract_pollution_data(api_data)
-            if pollution_entries:
-                for entry in pollution_entries:
-                    entry['Location'] = location
-                    pollution_data.append(entry)
+        lat, lon = latitude_longitude.get(location, (None, None))
+        if lat is not None and lon is not None:
+            api_data = get_air_quality_data(lat, lon, start_timestamp, end_timestamp)
+            if api_data:
+                pollution_entries = extract_pollution_data(api_data)
+                if pollution_entries:
+                    for entry in pollution_entries:
+                        entry['Location'] = location
+                        pollution_data.append(entry)
 
-    # Convertir en DataFrame
     pollution_df = pd.DataFrame(pollution_data)
-
-    # Fusionner les données démographiques, géographiques et de pollution
     combined_data = pd.merge(demographic_data, pollution_df, on='Location')
     combined_data = pd.merge(combined_data, geographic_data, on='Location')
 
-    # Sauvegarder le résultat dans un nouveau fichier CSV
-    combined_data.to_csv('Combined_Data.csv', index=False)
-
+    combined_data.to_csv('/home/voahary/airflow/dags/Combined_Data.csv', index=False)
     print(combined_data)
 
-first_extract()
